@@ -9,11 +9,11 @@ E:T
 E:EAT
 T:F
 T:TMF
-F:'('E')'
+F:(E)
 F:{INTEGER}
 F:{IDENTIFIER}
-A:'+'
-A:'-'
-M:'*'
-M:'/'
+A:+
+A:-
+M:*
+M:/
 ##end of CFG

@@ -17,11 +17,11 @@ public class Monitor {
     /**
      * 转换表
      */
-    int[][] table;
+    private int[][] table;
     /**
      * 转换类型表
      */
-    char[][] type;
+    private char[][] type;
     /**
      * 符号表
      * key——符号
