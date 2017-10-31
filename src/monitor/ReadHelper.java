@@ -74,10 +74,14 @@ class ReadHelper {
 
             while (scanner.hasNext()) {
                 String[] next = scanner.next().split(":");
+                if(next.length == 1){
+                    break;
+                }
                 productionsLeft.add(next[0]);
                 productionsRight.add(next[1]);
             }
 
+            scanner.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }

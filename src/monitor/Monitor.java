@@ -61,7 +61,7 @@ public class Monitor {
             }
         }
 
-        System.out.println(symbolMap);
+        //System.out.println(symbolMap);
     }
 
     public static void main(String[] args) {
@@ -83,6 +83,9 @@ public class Monitor {
         while (loc < input.length()) {
             int state = states.peek();
             String cur;
+
+            //记录当前读头位置
+            int before = loc;
             if (input.charAt(loc) == '{') {
                 int start = loc + 1;
                 while (input.charAt(loc) != '}') {
@@ -93,7 +96,6 @@ public class Monitor {
                 cur = input.substring(loc, loc + 1);
             }
 
-
             if (!symbolMap.containsKey(cur)) {
                 handelError(loc, "can't find symbol");
                 return null;
@@ -101,7 +103,6 @@ public class Monitor {
             int col = symbolMap.get(cur);
             switch (type[state][col]) {
                 case 'e':
-                    System.out.println(result);
                     handelError(loc, "no transition in table");
                     return null;
                 case 's':
@@ -111,6 +112,7 @@ public class Monitor {
                     break;
                 case 'r':
                     handleReduction(loc, table[state][col], states, symbols, result);
+                    loc = before;
                     break;
                 case 'a':
                     return result;
@@ -146,9 +148,18 @@ public class Monitor {
             } else {
                 symbol = right.substring(i, i + 1);
             }
-            if (symbols.isEmpty() && !symbols.pop().equals(symbol)) {
-                handelError(loc, "can't match!");
+
+            if (symbols.isEmpty()) {
+                handelError(loc, "can't match! 153");
+                System.exit(-1);
             }
+            //System.out.println(symbol);
+            if (!symbols.pop().equals(symbol)) {
+                handelError(loc, "can't match! 157");
+                System.exit(-1);
+            }
+
+            //System.out.println(states.size() + " " + symbols.size());
             states.pop();
         }
 
@@ -162,7 +173,7 @@ public class Monitor {
     /**
      * 错误处理程序
      *
-     * @param loc 出错的位置
+     * @param loc     出错的位置
      * @param message 出错信息
      */
     private void handelError(int loc, String message) {

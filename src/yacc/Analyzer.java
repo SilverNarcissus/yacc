@@ -11,24 +11,50 @@ public class Analyzer {
      */
     private static final String DEFINE_FILE_PATH = "my.y";
     /**
+     * .t 文件路径
+     */
+    private static final String TABLE_FILE_PATH = "my.t";
+    /**
      * 基本产生式列表
      */
     private ArrayList<String> productions;
     /**
      * 基本tokens集合
      */
-    private Set<String> tokens;
+    private List<String> tokens;
+
+    /**
+     * 非终结符序列
+     */
+    private List<String> nonTerminalSymbols;
+
     /**
      * 状态列表
      */
     private ArrayList<State> states;
 
+    /**
+     * 所有转换边的集合
+     */
+    private Set<Side> sides;
+
     public Analyzer() {
         productions = new ArrayList<>();
-        tokens = new HashSet<>();
+        tokens = new ArrayList<>();
         states = new ArrayList<>();
+        nonTerminalSymbols = new ArrayList<>();
+        sides = new HashSet<>();
 
-        ReadHelper.readFile(DEFINE_FILE_PATH, tokens, productions);
+        IOHelper.readFile(DEFINE_FILE_PATH, tokens, productions);
+        tokens.add("$");
+        //将产生式左部加入token序列
+        Set<String> left = new HashSet<>();
+        for (String production : productions) {
+            left.add(production.split(":")[0]);
+        }
+        left.remove("S");
+
+        nonTerminalSymbols.addAll(left);
     }
 
     public static void main(String[] args) {
@@ -41,12 +67,39 @@ public class Analyzer {
      */
     public void parse() {
         buildDFA();
+        generateTable();
+    }
+
+    /**
+     * 生成转换表并产生.t文件
+     */
+    private void generateTable() {
+        int n = states.size();
+        int m = tokens.size() + nonTerminalSymbols.size();
+        int[][] table = new int[n][m];
+        char[][] type = new char[n][m];
+
+        for (Side side : sides) {
+            table[side.row][side.col] = side.to;
+            type[side.row][side.col] = side.transition;
+        }
+
+        for (int i = 0; i < n; i++) {
+            for (int j = 0; j < m; j++) {
+                if (type[i][j] == '\0') {
+                    type[i][j] = 'e';
+                }
+            }
+        }
+
+        IOHelper.writeFile(TABLE_FILE_PATH, table, type, tokens, nonTerminalSymbols, productions);
     }
 
     /**
      * 生成DFA
      */
     private void buildDFA() {
+        //初始化一些变量
         String[] firstPart = productions.get(0).split(":");
         Set<String> fistPredictions = new HashSet<>();
         fistPredictions.add("$");
@@ -54,11 +107,108 @@ public class Analyzer {
         Set<Production> beginSet = new HashSet<>();
         beginSet.add(first);
 
-        State zero = new State(states.size(), beginSet, new HashMap<>());
-
+        //初始化状态0
+        State zero = new State(states.size(), beginSet);
         findClosure(zero);
+        states.add(zero);
+        //
 
-        System.out.println(zero.productionSet);
+        //开始循环找到发出边
+        Queue<State> before = new LinkedList<>();
+        before.add(zero);
+        while (!before.isEmpty()) {
+            State cur = before.poll();
+            HashMap<String, State> reachMap = new HashMap<>();
+            //对每个产生式进行扫描，寻找出发到达的状态集合及内部可归约产生式
+            for (Production production : cur.productionSet) {
+                if (production.canReduce()) {
+                    if (handleReducible(cur.id, production)) return;
+                } else {
+                    putReachMap(reachMap, production.next(), production.shift());
+                }
+            }
+            //合并重复状态，产生转换边
+            if (generateNewStateAndAddSide(cur.id, reachMap, before)) return;
+        }
+    }
+
+    /**
+     * 合并重复状态，产生新状态，产生转换边
+     *
+     * @param cur      当前状态号
+     * @param reachMap 可达状态集合
+     * @return 处理过程中是否出错
+     */
+    private boolean generateNewStateAndAddSide(int cur, HashMap<String, State> reachMap, Queue<State> before) {
+        for (String type : reachMap.keySet()) {
+            State candidate = reachMap.get(type);
+            findClosure(candidate);
+            //确定出发边的类型
+            char transition = 's';
+            int col = tokens.indexOf(type);
+            if (col == -1) {
+                col = tokens.size() + nonTerminalSymbols.indexOf(type);
+                transition = 'g';
+            }
+            //
+
+            //查看是否是相同状态
+            int stateId = states.indexOf(candidate);
+            if (stateId == -1) {
+                candidate.id = states.size();
+                Side newSide = new Side(cur, col, transition, candidate.id);
+                if (!sides.add(newSide)) {
+                    System.err.println("has same side!");
+                    return true;
+                }
+                states.add(candidate);
+                before.add(candidate);
+            } else {
+                Side newSide = new Side(cur, col, transition, stateId);
+                if (!sides.add(newSide)) {
+                    System.err.println("has same side!");
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 处理可归约式
+     *
+     * @param cur        当前状态编号
+     * @param production 可归约式
+     * @return 处理过程中是否出错
+     */
+    private boolean handleReducible(int cur, Production production) {
+        int idOfProduction = productions.indexOf(production.left + ":" + production.right);
+        for (String terminal : production.prediction) {
+            Side newSide = new Side(cur, tokens.indexOf(terminal), 'r', idOfProduction);
+            if (!sides.add(newSide)) {
+                System.err.println("has same side!");
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 向可达图中放入一个新的产生式的辅助方法
+     *
+     * @param reachMap   可达图
+     * @param side       边
+     * @param production 新产生式
+     */
+    private void putReachMap(HashMap<String, State> reachMap, String side, Production production) {
+        if (reachMap.containsKey(side)) {
+            reachMap.get(side).productionSet.add(production);
+        } else {
+            Set<Production> productions = new HashSet<>();
+            productions.add(production);
+            State state = new State(0, productions);
+            reachMap.put(side, state);
+        }
     }
 
     /**
@@ -87,7 +237,7 @@ public class Analyzer {
                         String[] part = production.split(":");
                         if (part[0].equals(cur)) {
                             Production newProduction = new Production(part[0], part[1], 0, newPrediction);
-                            if(core.productionSet.add(newProduction)){
+                            if (core.productionSet.add(newProduction)) {
                                 haveMore = true;
                                 temp.add(newProduction);
                             }
@@ -129,7 +279,8 @@ public class Analyzer {
                 boolean hasEmptyProductions = false;
                 for (String production : productions) {
                     String[] part = production.split(":");
-                    if (part[0].equals(cur)) {
+                    //若是A:->Aα 则不递归
+                    if (part[0].equals(cur) && !part[1].substring(0,1).equals(cur)) {
                         //System.out.println(part[1]);
                         hasEmptyProductions = hasEmptyProductions | first(part[1], subSet);
                     }

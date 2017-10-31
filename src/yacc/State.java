@@ -1,6 +1,5 @@
 package yacc;
 
-import java.util.HashMap;
 import java.util.Set;
 
 /**
@@ -17,20 +16,15 @@ class State {
      */
     Set<Production> productionSet;
 
-    /**
-     * 从该状态出发可以到达的状态转换图
-     */
-    HashMap<String, State> reachMap;
 
-    public State(int id, Set<Production> productionSet, HashMap<String, State> ranchMap) {
+    public State(int id, Set<Production> productionSet) {
         this.id = id;
         this.productionSet = productionSet;
-        this.reachMap = ranchMap;
     }
 
     @Override
     public int hashCode() {
-        return id + productionSet.hashCode() + reachMap.hashCode();
+        return productionSet.hashCode();
     }
 
     @Override
@@ -43,8 +37,13 @@ class State {
         }
 
         State another = (State) o;
-        return id == another.id &&
-                productionSet.equals(another.productionSet)
-                && reachMap.equals(another.reachMap);
+        return productionSet.equals(another.productionSet);
+    }
+
+    @Override
+    public String toString(){
+        String result = String.valueOf(id) + ": \n";
+        result += productionSet.toString() + "\n---------------\n";
+        return result;
     }
 }
