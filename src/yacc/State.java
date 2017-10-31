@@ -46,4 +46,30 @@ class State {
         result += productionSet.toString() + "\n---------------\n";
         return result;
     }
+
+    /**
+     * 判断该状态是否与另一个状态同心
+     * @param another 另一个状态
+     * @return 该状态是否与另一个状态同心
+     */
+    public boolean hasSameCore(State another){
+        if(productionSet.size() != another.productionSet.size()){
+            return false;
+        }
+
+        for(Production my : productionSet){
+            boolean hasSame = false;
+            for(Production other : another.productionSet) {
+                if(my.right.equals(other.right)&&my.left.equals(other.left)&&my.dot==other.dot){
+                    hasSame = true;
+                    break;
+                }
+            }
+            if(!hasSame){
+                return false;
+            }
+        }
+
+        return true;
+    }
 }

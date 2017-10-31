@@ -38,12 +38,18 @@ public class Analyzer {
      */
     private Set<Side> sides;
 
+    /**
+     * 所有删除掉的状态编号的集合
+     */
+    private List<Integer> deletedStates;
+
     public Analyzer() {
         productions = new ArrayList<>();
         tokens = new ArrayList<>();
         states = new ArrayList<>();
         nonTerminalSymbols = new ArrayList<>();
         sides = new HashSet<>();
+        deletedStates = new ArrayList<>();
 
         IOHelper.readFile(DEFINE_FILE_PATH, tokens, productions);
         tokens.add("$");
@@ -67,19 +73,99 @@ public class Analyzer {
      */
     public void parse() {
         buildDFA();
+        optimizeDFA();
         generateTable();
+    }
+
+    /**
+     * 最小化生成的DFA的状态
+     */
+    private void optimizeDFA() {
+        //判断是否同心，判断是否有交集规约式，若同心且无交集规约式，则合并状态
+        for (int i = 0; i < states.size(); i++) {
+            if (deletedStates.contains(i)) {
+                continue;
+            }
+
+            HashMap<Integer, Side> cols = new HashMap<>();
+            for (Side side : sides) {
+                if (side.row == i) {
+                    cols.put(side.col, side);
+                }
+            }
+            for (int j = i + 1; j < states.size(); j++) {
+                if (deletedStates.contains(j) || !states.get(i).hasSameCore(states.get(j))) {
+                    continue;
+                }
+
+                boolean isSame = true;
+                for (Side side : sides) {
+                    if (side.row == j && cols.containsKey(side.col)) {
+                        Side before = cols.get(side.col);
+                        if (before.to != side.to || before.transition != side.transition) {
+                            isSame = false;
+                            break;
+                        }
+                    }
+                }
+
+                if (isSame) {
+                    //1 将第二个状态中第一个状态没有的符号放入第一个状态
+                    //2 将指向第二个状态的边指向第一个状态
+                    System.out.println(i);
+                    for (Side side : sides) {
+                        //1
+                        if (side.row == j && !cols.containsKey(side.col)) {
+                            side.row = i;
+                        }
+                        //2
+                        if (side.to == j) {
+                            side.to = i;
+                        }
+                    }
+                    deletedStates.add(j);
+                }
+            }
+        }
+
+        Collections.sort(deletedStates);
+        System.out.println(deletedStates);
+
+        HashMap<Integer, Integer> idMap = new HashMap<>();
+        int loc = 0;
+        for (int i = 0; i < states.size(); i++) {
+            if (i == deletedStates.get(loc)) {
+                loc++;
+                continue;
+            }
+            idMap.put(i, i - loc);
+        }
+        System.out.println(idMap);
+
+        for(Side side : sides){
+            if(deletedStates.contains(side.row)){
+                side.row = -1;
+                continue;
+            }
+            side.row = idMap.get(side.row);
+            side.to = idMap.get(side.to);
+        }
+
     }
 
     /**
      * 生成转换表并产生.t文件
      */
     private void generateTable() {
-        int n = states.size();
+        int n = states.size() - deletedStates.size();
         int m = tokens.size() + nonTerminalSymbols.size();
         int[][] table = new int[n][m];
         char[][] type = new char[n][m];
 
         for (Side side : sides) {
+            if(side.row == -1){
+                continue;
+            }
             table[side.row][side.col] = side.to;
             type[side.row][side.col] = side.transition;
         }
@@ -280,7 +366,7 @@ public class Analyzer {
                 for (String production : productions) {
                     String[] part = production.split(":");
                     //若是A:->Aα 则不递归
-                    if (part[0].equals(cur) && !part[1].substring(0,1).equals(cur)) {
+                    if (part[0].equals(cur) && !part[1].substring(0, 1).equals(cur)) {
                         //System.out.println(part[1]);
                         hasEmptyProductions = hasEmptyProductions | first(part[1], subSet);
                     }
