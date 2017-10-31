@@ -24,7 +24,7 @@ class Production {
      */
     Set<String> prediction;
 
-    public Production(String right, String left, int dot, Set<String> prediction) {
+    public Production(String left, String right, int dot, Set<String> prediction) {
         this.right = right;
         this.left = left;
         this.dot = dot;
@@ -35,7 +35,7 @@ class Production {
         Set<String> test = new HashSet<>();
         test.add("INTEGER");
         test.add("+");
-        Production production = new Production("E", "{INTEGER}+T", 0, test);
+        Production production = new Production("{INTEGER}+T", "E", 0, test);
         System.out.println(production.shift().shift());
     }
 
@@ -54,7 +54,8 @@ class Production {
         }
 
         Production another = (Production) o;
-        return left.equals(another.left)
+        return right.equals(another.right)
+                && left.equals(another.left)
                 && dot == another.dot
                 && prediction.equals(another.prediction);
     }
@@ -65,7 +66,19 @@ class Production {
      * @return 该产生式是否可归约
      */
     boolean canReduce() {
-        return dot == left.length();
+        return dot == right.length();
+    }
+
+    /**
+     * 判断该产生式下一个移位是否是非终结符
+     *
+     * @return 该产生式下一个移位是否是非终结符
+     */
+    boolean nextIsNonTerminal() {
+        if (canReduce()) {
+            return false;
+        }
+        return right.charAt(dot) != '{';
     }
 
     /**
@@ -80,16 +93,16 @@ class Production {
         int end = dot;
         int start = dot;
 
-        if (left.charAt(start) == '{') {
+        if (right.charAt(start) == '{') {
             start = dot + 1;
-            while (left.charAt(end) != '}') {
+            while (right.charAt(end) != '}') {
                 end++;
             }
             end--;
         }
 
         end++;
-        return left.substring(start, end);
+        return right.substring(start, end);
     }
 
     /**
@@ -101,25 +114,43 @@ class Production {
         if (canReduce()) {
             throw new IllegalStateException("production can't shift because it's reducible");
         }
+        int newDot = getNewDot();
+
+        return new Production(left, right, newDot, new HashSet<>(prediction));
+    }
+
+    /**
+     * 寻找下一个移进点位
+     * @return 下一个移进点位
+     */
+    private int getNewDot() {
         int newDot = dot;
-        if (left.charAt(newDot) == '{') {
-            while (left.charAt(newDot) != '}') {
+        if (right.charAt(newDot) == '{') {
+            while (right.charAt(newDot) != '}') {
                 newDot++;
             }
             newDot++;
         } else {
             newDot++;
         }
-
-        return new Production(right, left, newDot, new HashSet<>(prediction));
+        return newDot;
     }
 
     @Override
     public String toString() {
-        String result = right + "->" + left.substring(0, dot) + "." + left.substring(dot) + " predictions: ";
+        String result = left + "->" + right.substring(0, dot) + "." + right.substring(dot) + " predictions: ";
         for (String s : prediction) {
             result += s + "|";
         }
         return result;
+    }
+
+    /**
+     * 返回下一个非终结符后的序列
+     *
+     * @return 下一个非终结符后的序列
+     */
+    String after() {
+        return right.substring(getNewDot());
     }
 }

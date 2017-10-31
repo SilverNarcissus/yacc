@@ -1,19 +1,16 @@
 %token
 INTEGER
-IDENTIFIER
-##end of token
-
++
+*
+(
+)
+##end_of_token
 %CFG
 S:E
 E:T
-E:EAT
+E:E{+}T
 T:F
-T:TMF
-F:(E)
+T:T{*}F
+F:{(}E{)}
 F:{INTEGER}
-F:{IDENTIFIER}
-A:+
-A:-
-M:*
-M:/
 ##end of CFG
