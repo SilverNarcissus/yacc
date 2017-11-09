@@ -48,11 +48,6 @@ public class Monitor {
     private String[] tokens;
 
     /**
-     * 归约动作类
-     */
-    private Functions functions;
-
-    /**
      * 归约语法栈
      */
     private Stack<String> semanticStack;
@@ -61,7 +56,6 @@ public class Monitor {
         symbolMap = new HashMap<>();
         productionLeft = new ArrayList<>();
         productionRight = new ArrayList<>();
-        functions = new Functions();
         semanticStack = new Stack<>();
 
         tokens = IOHelper.readInput(INPUT_FILE_PATH).split(">");
@@ -181,13 +175,16 @@ public class Monitor {
         symbols.push(reductionResult);
 
         try {
-            Functions.class.getDeclaredMethod("function" + index, Stack.class).invoke(functions, semanticStack);
+            Class.forName("monitor.Functions").getDeclaredMethod("function" + index, Stack.class).invoke(null, semanticStack);
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
             handelError(loc, "Reflect error");
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
             handelError(loc, "No such action");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+            handelError(loc, "Can't find action file");
         }
         result.add(right + "->" + reductionResult);
     }
