@@ -3,7 +3,7 @@ package yacc;
 /**
  * Created by SilverNarcissus on 2017/10/31.
  */
-public class Side {
+class Side {
     /**
      * 表中的行号
      */

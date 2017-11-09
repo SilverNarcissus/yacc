@@ -31,14 +31,6 @@ class Production {
         this.prediction = prediction;
     }
 
-    public static void main(String[] args) {
-        Set<String> test = new HashSet<>();
-        test.add("INTEGER");
-        test.add("+");
-        Production production = new Production("{INTEGER}+T", "E", 0, test);
-        System.out.println(production.shift().shift());
-    }
-
     @Override
     public int hashCode() {
         return left.hashCode() + dot + prediction.hashCode();

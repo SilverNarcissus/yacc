@@ -3,12 +3,13 @@ package monitor;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Scanner;
 
 /**
  * 帮助读取文件的工具类
  */
-class ReadHelper {
+class IOHelper {
     /**
      * 读取输入文件的方法
      * @param fileName 输入文件名
@@ -28,7 +29,7 @@ class ReadHelper {
         }
 
         try {
-            return new String(fileContent, encoding) + "$";
+            return new String(fileContent, encoding) + "<$,$>";
         } catch (UnsupportedEncodingException e) {
             System.err.println("The OS does not support " + encoding);
             e.printStackTrace();
@@ -88,5 +89,25 @@ class ReadHelper {
 
 
         return result;
+    }
+
+    /**
+     * 将生成的归约产生式序列写入.output文件
+     *
+     * @param outputPath .output文件路径
+     * @param productions     归约产生式序列
+     */
+    public static void writeOutput(String outputPath, List<String> productions) {
+        FileWriter writer = null;
+        try {
+            writer = new FileWriter(new File(outputPath));
+            for (String production : productions) {
+                writer.write(production + '\n');
+            }
+            writer.flush();
+            writer.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

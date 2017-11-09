@@ -1,0 +1,23 @@
+{INTEGER}->F
+F->T
+T->E
+{+}->A
+{INTEGER}->F
+F->T
+{*}->B
+{INTEGER}->F
+TBF->T
+EAT->E
+{+}->A
+{INTEGER}->F
+F->T
+T->E
+{+}->A
+{INTEGER}->F
+F->T
+EAT->E
+{(}E{)}->F
+F->T
+EAT->E
+E->S
+The result of this expression is :23

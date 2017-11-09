@@ -15,6 +15,10 @@ public class Analyzer {
      */
     private static final String TABLE_FILE_PATH = "my.t";
     /**
+     * 规约动作文件路径
+     */
+    private static final String ACTIONS_FILE_PATH = "src/monitor/Functions.java";
+    /**
      * 基本产生式列表
      */
     private ArrayList<String> productions;
@@ -43,6 +47,11 @@ public class Analyzer {
      */
     private List<Integer> deletedStates;
 
+    /**
+     * 所有归约动作
+     */
+    private List<String> actions;
+
     public Analyzer() {
         productions = new ArrayList<>();
         tokens = new ArrayList<>();
@@ -50,8 +59,9 @@ public class Analyzer {
         nonTerminalSymbols = new ArrayList<>();
         sides = new HashSet<>();
         deletedStates = new ArrayList<>();
+        actions = new ArrayList<>();
 
-        IOHelper.readFile(DEFINE_FILE_PATH, tokens, productions);
+        IOHelper.readFile(DEFINE_FILE_PATH, tokens, productions, actions);
         tokens.add("$");
         //将产生式左部加入token序列
         Set<String> left = new HashSet<>();
@@ -63,11 +73,6 @@ public class Analyzer {
         nonTerminalSymbols.addAll(left);
     }
 
-    public static void main(String[] args) {
-        Analyzer analyzer = new Analyzer();
-        analyzer.parse();
-    }
-
     /**
      * 分析.y文件，生成.t文件
      */
@@ -75,6 +80,7 @@ public class Analyzer {
         buildDFA();
         optimizeDFA();
         generateTable();
+        IOHelper.buildActionsFile(ACTIONS_FILE_PATH, actions);
     }
 
     /**
@@ -142,8 +148,8 @@ public class Analyzer {
         }
         System.out.println(idMap);
 
-        for(Side side : sides){
-            if(deletedStates.contains(side.row)){
+        for (Side side : sides) {
+            if (deletedStates.contains(side.row)) {
                 side.row = -1;
                 continue;
             }
@@ -163,7 +169,7 @@ public class Analyzer {
         char[][] type = new char[n][m];
 
         for (Side side : sides) {
-            if(side.row == -1){
+            if (side.row == -1) {
                 continue;
             }
             table[side.row][side.col] = side.to;

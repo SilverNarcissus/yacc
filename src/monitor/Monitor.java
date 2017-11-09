@@ -1,5 +1,6 @@
 package monitor;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 /**
@@ -41,15 +42,35 @@ public class Monitor {
      */
     private String input;
 
+    /**
+     * 输入的token序列
+     */
+    private String[] tokens;
+
+    /**
+     * 归约动作类
+     */
+    private Functions functions;
+
+    /**
+     * 归约语法栈
+     */
+    private Stack<String> syntaxStack;
+
     public Monitor() {
         symbolMap = new HashMap<>();
         productionLeft = new ArrayList<>();
         productionRight = new ArrayList<>();
+        functions = new Functions();
+        syntaxStack = new Stack<>();
 
-        input = ReadHelper.readInput(INPUT_FILE_PATH);
+        tokens = IOHelper.readInput(INPUT_FILE_PATH).split(">");
 
         String[][] cache;
-        cache = ReadHelper.readTable(TABLE_FILE_PATH, productionLeft, productionRight, symbolMap);
+        cache = IOHelper.readTable(TABLE_FILE_PATH, productionLeft, productionRight, symbolMap);
+        //将开始符放入符号表
+        symbolMap.put("S", 0);
+
         int n = cache.length;
         int m = cache[0].length;
         table = new int[n][m];
@@ -64,57 +85,49 @@ public class Monitor {
         //System.out.println(symbolMap);
     }
 
-    public static void main(String[] args) {
-        Monitor m = new Monitor();
-        System.out.println(m.parse());
-    }
-
     /**
      * 将input解释为规约序列
      */
     public List<String> parse() {
         List<String> result = new LinkedList<>();
-        int loc = 0;
         Stack<Integer> states = new Stack<>();
         Stack<String> symbols = new Stack<>();
         states.push(0);
         symbols.push("$");
 
-        while (loc < input.length()) {
+        for (int i = 0; i < tokens.length; i++) {
             int state = states.peek();
             String cur;
+            String number;
 
-            //记录当前读头位置
-            int before = loc;
-            if (input.charAt(loc) == '{') {
-                int start = loc + 1;
-                while (input.charAt(loc) != '}') {
-                    loc++;
-                }
-                cur = input.substring(start, loc);
-            } else {
-                cur = input.substring(loc, loc + 1);
+            cur = tokens[i].split(",")[0].substring(1);
+            number = tokens[i].split(",")[1];
+            //如果该符号是操作符，则赋予其具体的操作符
+            if (cur.equals("OPERATOR")) {
+                cur = number;
             }
 
             if (!symbolMap.containsKey(cur)) {
-                handelError(loc, "can't find symbol");
+                handelError(i, "can't find symbol");
                 return null;
             }
             int col = symbolMap.get(cur);
             switch (type[state][col]) {
                 case 'e':
-                    handelError(loc, "no transition in table");
+                    handelError(i, "no transition in table");
                     return null;
                 case 's':
                     states.push(table[state][col]);
                     symbols.push(cur);
-                    loc++;
+                    syntaxStack.push(number);
                     break;
                 case 'r':
-                    handleReduction(loc, table[state][col], states, symbols, result);
-                    loc = before;
+                    handleReduction(i, table[state][col], states, symbols, result);
+                    i--;
                     break;
                 case 'a':
+                    handleReduction(i, 0, states, symbols, result);
+                    result.add("The result of this expression is :" + syntaxStack.pop());
                     return result;
                 default:
                     System.err.println("error in table!");
@@ -122,7 +135,7 @@ public class Monitor {
             }
         }
 
-        handelError(loc, "can't match (incomplete sentence)");
+        handelError(tokens.length - 1, "can't match (incomplete sentence)");
         return result;
     }
 
@@ -167,6 +180,15 @@ public class Monitor {
         states.push(table[states.peek()][symbolMap.get(reductionResult)]);
         symbols.push(reductionResult);
 
+        try {
+            Functions.class.getDeclaredMethod("function" + index, Stack.class).invoke(functions, syntaxStack);
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+            handelError(loc, "Reflect error");
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+            handelError(loc, "No such action");
+        }
         result.add(right + "->" + reductionResult);
     }
 
