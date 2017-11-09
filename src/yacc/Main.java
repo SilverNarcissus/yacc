@@ -1,7 +1,7 @@
 package yacc;
 
 /**
- * Created by SilverNarcissus on 2017/11/9.
+ * 语法分析器yacc部分的入口
  */
 public class Main {
     public static void main(String[] args) {

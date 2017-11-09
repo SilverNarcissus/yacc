@@ -1,7 +1,7 @@
 package monitor;
 
 /**
- * 语法分析器monitor部分入口
+ * 语法分析器monitor部分的入口
  */
 public class Main {
     /**

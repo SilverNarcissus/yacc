@@ -116,15 +116,12 @@ public class Analyzer {
                 }
 
                 if (isSame) {
-                    //1 将第二个状态中第一个状态没有的符号放入第一个状态
-                    //2 将指向第二个状态的边指向第一个状态
-                    System.out.println(i);
                     for (Side side : sides) {
-                        //1
+                        //1 将第二个状态中第一个状态没有的符号放入第一个状态
                         if (side.row == j && !cols.containsKey(side.col)) {
                             side.row = i;
                         }
-                        //2
+                        //2 将指向第二个状态的边指向第一个状态
                         if (side.to == j) {
                             side.to = i;
                         }
@@ -135,7 +132,6 @@ public class Analyzer {
         }
 
         Collections.sort(deletedStates);
-        System.out.println(deletedStates);
 
         HashMap<Integer, Integer> idMap = new HashMap<>();
         int loc = 0;
@@ -146,7 +142,6 @@ public class Analyzer {
             }
             idMap.put(i, i - loc);
         }
-        System.out.println(idMap);
 
         for (Side side : sides) {
             if (deletedStates.contains(side.row)) {
@@ -388,6 +383,13 @@ public class Analyzer {
         return true;
     }
 
+    /**
+     * 得到一段序列的终止位置（处理{}）
+     *
+     * @param sequence 序列
+     * @param end      起始终止位置
+     * @return 最终终止位置
+     */
     private int getEnd(String sequence, int end) {
         if (sequence.charAt(end) == '{') {
             while (sequence.charAt(end) != '}') {

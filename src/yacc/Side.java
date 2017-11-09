@@ -1,7 +1,7 @@
 package yacc;
 
 /**
- * Created by SilverNarcissus on 2017/10/31.
+ * 表征了.t文件中的一个转换状态
  */
 class Side {
     /**

@@ -4,7 +4,7 @@ import java.util.Stack;
 
 /**
  * 这个文件是yacc自动生成的归约动作文件
- * 生成时间为：Thu Nov 09 10:30:33 CST 2017
+ * 生成时间为：Thu Nov 09 11:43:34 CST 2017
  */
 public class Functions {
     public static void function0(Stack<String> s) {
@@ -18,7 +18,7 @@ public class Functions {
         int first = Integer.valueOf(s.pop());
         String op = s.pop();
         int second = Integer.valueOf(s.pop());
-        s.push(String.valueOf(op.equals("+")?(first + second):(first - second)));
+        s.push(String.valueOf(op.equals("+")?(second + first):(second - first)));
     }
 
     public static void function3(Stack<String> s) {
@@ -28,7 +28,7 @@ public class Functions {
         int first = Integer.valueOf(s.pop());
         String op = s.pop();
         int second = Integer.valueOf(s.pop());
-        s.push(String.valueOf(op.equals("*")?(first * second):(first / second)));
+        s.push(String.valueOf(op.equals("*")?(second * first):(second / first)));
     }
 
     public static void function5(Stack<String> s) {

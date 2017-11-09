@@ -55,14 +55,14 @@ public class Monitor {
     /**
      * 归约语法栈
      */
-    private Stack<String> syntaxStack;
+    private Stack<String> semanticStack;
 
     public Monitor() {
         symbolMap = new HashMap<>();
         productionLeft = new ArrayList<>();
         productionRight = new ArrayList<>();
         functions = new Functions();
-        syntaxStack = new Stack<>();
+        semanticStack = new Stack<>();
 
         tokens = IOHelper.readInput(INPUT_FILE_PATH).split(">");
 
@@ -119,7 +119,7 @@ public class Monitor {
                 case 's':
                     states.push(table[state][col]);
                     symbols.push(cur);
-                    syntaxStack.push(number);
+                    semanticStack.push(number);
                     break;
                 case 'r':
                     handleReduction(i, table[state][col], states, symbols, result);
@@ -127,7 +127,7 @@ public class Monitor {
                     break;
                 case 'a':
                     handleReduction(i, 0, states, symbols, result);
-                    result.add("The result of this expression is :" + syntaxStack.pop());
+                    result.add("The result of this expression is :" + semanticStack.pop());
                     return result;
                 default:
                     System.err.println("error in table!");
@@ -181,7 +181,7 @@ public class Monitor {
         symbols.push(reductionResult);
 
         try {
-            Functions.class.getDeclaredMethod("function" + index, Stack.class).invoke(functions, syntaxStack);
+            Functions.class.getDeclaredMethod("function" + index, Stack.class).invoke(functions, semanticStack);
         } catch (IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
             handelError(loc, "Reflect error");
